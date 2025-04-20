@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping List App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --danger-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .app-header {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 2rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .app-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            border-radius: 2px;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .app-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .app-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(72, 149, 239, 0.2);
+        }
+
+        .app-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 16px;
+        }
+
+        .app-button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .app-button:active {
+            transform: translateY(0);
+        }
+
+        .delete-btn {
+            background-color: var(--danger-color);
+            padding: 6px 10px;
+            font-size: 13px;
+            min-width: 30px;
+        }
+
+        .delete-btn:hover {
+            background-color: #d1145a;
+        }
+
+        .export-btn {
+            background-color: var(--success-color);
+        }
+
+        .export-btn:hover {
+            background-color: #45a049;
+        }
+
+        .list-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 50px;
+            padding: 12px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            font-weight: 600;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .list-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 50px;
+            padding: 12px 15px;
+            align-items: center;
+            border-bottom: 1px solid #e9ecef;
+            transition: var(--transition);
+            font-size: 14px;
+        }
+
+        .list-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .list-container {
+            border: 1px solid #e9ecef;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .price-input {
+            max-width: 90px;
+        }
+
+        .quantity-input {
+            max-width: 60px;
+            text-align: center;
+        }
+
+        .total-price {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state p {
+            margin-bottom: 15px;
+        }
+
+        .summary-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 12px 15px;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+        }
+
+        .grand-total {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 600px) {
+            .input-section {
+                flex-direction: column;
+            }
+            
+            .list-header, .list-item {
+                grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 40px;
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+            
+            .app-button {
+                width: 100%;
+            }
+            
+            .delete-btn {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+
+            .summary-section {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .action-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .list-item {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1 class="app-header">Shopping List</h1>
+        
+        <div class="input-section">
+            <input type="text" id="productInput" class="app-input" placeholder="Product name" autofocus>
+            <input type="number" id="quantityInput" class="app-input quantity-input" placeholder="Qty" min="1" value="1">
+            <input type="number" id="priceInput" class="app-input price-input" placeholder="Price (₹)" min="0" step="0.01">
+            <button id="addBtn" class="app-button">Add Item</button>
+        </div>
+        
+        <div class="list-container" id="listContainer">
+            <div class="list-header">
+                <div>Product</div>
+                <div>Qty</div>
+                <div>Price</div>
+                <div>Total</div>
+                <div></div>
+            </div>
+            <div id="emptyState" class="empty-state">
+                <p>Your shopping list is empty</p>
+                <button id="addSampleBtn" class="app-button">Add Sample Items</button>
+            </div>
+        </div>
+        
+        <div class="summary-section">
+            <div class="grand-total" id="grandTotal">₹0.00</div>
+            <div class="action-buttons">
+                <button id="exportBtn" class="app-button export-btn">Export to PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const productInput = document.getElementById('productInput');
+            const quantityInput = document.getElementById('quantityInput');
+            const priceInput = document.getElementById('priceInput');
+            const addBtn = document.getElementById('addBtn');
+            const listContainer = document.getElementById('listContainer');
+            const emptyState = document.getElementById('emptyState');
+            const grandTotalElement = document.getElementById('grandTotal');
+            const addSampleBtn = document.getElementById('addSampleBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            // Data Store
+            let items = [];
+            
+            // Load saved items from localStorage
+            function loadItems() {
+                const savedItems = localStorage.getItem('shoppingList');
+                if (savedItems) {
+                    items = JSON.parse(savedItems);
+                    renderList();
+                }
+            }
+            
+            // Save items to localStorage
+            function saveItems() {
+                localStorage.setItem('shoppingList', JSON.stringify(items));
+            }
+            
+            // Add new item to the list
+            function addItem() {
+                const productName = productInput.value.trim();
+                const quantity = parseInt(quantityInput.value);
+                const price = parseFloat(priceInput.value);
+                
+                if (!validateInput(productName, quantity, price)) return;
+                
+                const newItem = createItem(productName, quantity, price);
+                items.push(newItem);
+                
+                saveItems();
+                renderList();
+                clearInputs();
+                productInput.focus();
+            }
+            
+            // Validate form inputs
+            function validateInput(name, qty, price) {
+                if (!name) {
+                    alert('Please enter a product name');
+                    return false;
+                }
+                if (isNaN(qty) || qty < 1) {
+                    alert('Please enter a valid quantity (minimum 1)');
+                    return false;
+                }
+                if (isNaN(price) || price < 0) {
+                    alert('Please enter a valid price');
+                    return false;
+                }
+                return true;
+            }
+            
+            // Create new item object
+            function createItem(name, qty, price) {
+                return {
+                    id: Date.now(),
+                    name: name,
+                    quantity: qty,
+                    price: price,
+                    total: (qty * price).toFixed(2)
+                };
+            }
+            
+            // Clear input fields
+            function clearInputs() {
+                productInput.value = '';
+                quantityInput.value = '1';
+                priceInput.value = '';
+            }
+            
+            // Add sample items for demonstration
+            function addSampleItems() {
+                items = [
+                    { id: 1, name: 'Milk', quantity: 2, price: 85, total: '170.00' },
+                    { id: 2, name: 'Bread', quantity: 1, price: 45, total: '45.00' },
+                    { id: 3, name: 'Eggs', quantity: 12, price: 8, total: '96.00' },
+                    { id: 4, name: 'Rice (1kg)', quantity: 1, price: 120, total: '120.00' },
+                    { id: 5, name: 'Apples', quantity: 6, price: 25, total: '150.00' }
+                ];
+                
+                saveItems();
+                renderList();
+            }
+            
+            // Render the shopping list
+            function renderList() {
+                // Clear existing items
+                while (listContainer.children.length > 2) {
+                    listContainer.removeChild(listContainer.lastChild);
+                }
+                
+                // Show empty state if no items
+                if (items.length === 0) {
+                    emptyState.style.display = 'block';
+                    grandTotalElement.textContent = '₹0.00';
+                    return;
+                }
+                
+                emptyState.style.display = 'none';
+                
+                // Calculate and display grand total
+                let grandTotal = 0;
+                
+                // Add each item to the list
+                items.forEach(item => {
+                    grandTotal += parseFloat(item.total);
+                    
+                    const listItem = document.createElement('div');
+                    listItem.className = 'list-item';
+                    listItem.dataset.id = item.id;
+                    
+                    listItem.innerHTML = `
+                        <div>${item.name}</div>
+                        <div>${item.quantity}</div>
+                        <div>₹${item.price.toFixed(2)}</div>
+                        <div class="total-price">₹${item.total}</div>
+                        <div class="btn-icon">
+                            <button class="app-button delete-btn" onclick="deleteItem(${item.id})">✕</button>
+                        </div>
+                    `;
+                    
+                    listContainer.appendChild(listItem);
+                });
+                
+                // Update grand total display
+                grandTotalElement.textContent = `₹${grandTotal.toFixed(2)}`;
+            }
+            
+            // Delete an item from the list
+            window.deleteItem = function(id) {
+                items = items.filter(item => item.id !== id);
+                saveItems();
+                renderList();
+            };
+            
+            // Export to PDF function
+            function exportToPDF() {
+                if (items.length === 0) {
+                    alert('Your shopping list is empty. Add some items before exporting.');
+                    return;
+                }
+                
+                // Create new PDF document
+                const doc = new jsPDF();
+                
+                // Set document properties
+                doc.setProperties({
+                    title: 'Shopping List',
+                    subject: 'Generated from Shopping List App',
+                    author: 'Shopping List App',
+                    keywords: 'shopping, groceries, list',
+                    creator: 'Shopping List App'
+                });
+                
+                // Add header
+                doc.setFontSize(20);
+                doc.setTextColor(67, 97, 238);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Shopping List', 105, 20, { align: 'center' });
+                
+                // Add date
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.setFont('helvetica', 'normal');
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN', options)}`, 14, 30);
+                
+                // Prepare table data
+                const headers = [['#', 'Item', 'Qty', 'Price (₹)', 'Total (₹)']];
+                const tableData = items.map((item, index) => [
+                    index + 1,
+                    item.name,
+                    item.quantity,
+                    item.price.toFixed(2),
+                    item.total
+                ]);
+                
+                // Calculate grand total
+                const grandTotal = items.reduce((sum, item) => sum + parseFloat(item.total), 0);
+                
+                // Add table to PDF
+                doc.autoTable({
+                    startY: 40,
+                    head: headers,
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [67, 97, 238],
+                        textColor: 255,
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        cellPadding: 5,
+                        fontSize: 10,
+                        overflow: 'linebreak'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10 },  // #
+                        1: { cellWidth: 'auto' }, // Item
+                        2: { cellWidth: 20 }, // Qty
+                        3: { cellWidth: 30 }, // Price
+                        4: { cellWidth: 30 }  // Total
+                    },
+                    didDrawPage: function(data) {
+                        // Add grand total at the end
+                        if (data.pageNumber === data.pageCount) {
+                            const finalY = data.cursor.y + 15;
+                            
+                            doc.setFontSize(12);
+                            doc.setFont('helvetica', 'bold');
+                            doc.setTextColor(67, 97, 238);
+                            doc.text('Grand Total:', 150, finalY);
+                            doc.text(`₹${grandTotal.toFixed(2)}`, 190, finalY);
+                            
+                            // Add footer
+                            doc.setFontSize(10);
+                            doc.setTextColor(150, 150, 150);
+                            doc.text('Created with Shopping List App', 105, doc.internal.pageSize.height - 10, { align: 'center' });
+                        }
+                    }
+                });
+                
+                // Save the PDF
+                doc.save(`Shopping_List_${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+            
+            // Event Listeners
+            addBtn.addEventListener('click', addItem);
+            productInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addItem();
+            });
+            addSampleBtn.addEventListener('click', addSampleItems);
+            exportBtn.addEventListener('click', exportToPDF);
+            
+            // Initialize the app
+            loadItems();
+        });
+    </script>
+</body>
+</html>
